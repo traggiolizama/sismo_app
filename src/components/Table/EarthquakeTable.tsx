@@ -5,15 +5,33 @@ interface EarthquakeTableProps {
 }
 
 const localDateFormatter = new Intl.DateTimeFormat('es-CL', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
+  day: '2-digit',
+  month: 'short',
+  hour: '2-digit',
+  minute: '2-digit',
 })
+
+function getMagnitudeClass(magnitude: number): string {
+  if (magnitude >= 5) {
+    return 'magnitude-high'
+  }
+
+  if (magnitude >= 4) {
+    return 'magnitude-medium'
+  }
+
+  return 'magnitude-low'
+}
 
 export function EarthquakeTable({
   earthquakes,
 }: EarthquakeTableProps) {
   if (earthquakes.length === 0) {
-    return <p>No se encontraron sismos para el período seleccionado.</p>
+    return (
+      <div className="empty-state">
+        <p>No se encontraron sismos para el período seleccionado.</p>
+      </div>
+    )
   }
 
   return (
@@ -21,7 +39,7 @@ export function EarthquakeTable({
       <table>
         <thead>
           <tr>
-            <th scope="col">Magnitud</th>
+            <th scope="col">Mag.</th>
             <th scope="col">Lugar</th>
             <th scope="col">Fecha local</th>
           </tr>
@@ -32,8 +50,21 @@ export function EarthquakeTable({
 
             return (
               <tr key={earthquake.id}>
-                <td>{earthquake.mag.toFixed(1)}</td>
-                <td>{earthquake.place}</td>
+                <td>
+                  <span className={`magnitude-badge ${getMagnitudeClass(earthquake.mag)}`}>
+                    {earthquake.mag.toFixed(1)}
+                  </span>
+                </td>
+                <td>
+                  <a
+                    className="place-link"
+                    href={earthquake.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {earthquake.place}
+                  </a>
+                </td>
                 <td>
                   <time dateTime={date.toISOString()}>
                     {localDateFormatter.format(date)}
