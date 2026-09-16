@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   fetchEarthquakes,
   type EarthquakeQueryParams,
@@ -8,76 +8,101 @@ import type { Earthquake } from '../types/earthquake'
 interface UseEarthquakesResult {
   data: Earthquake[]
   loading: boolean
+  refreshing: boolean
   error: string | null
+  lastUpdated: number | null
+  refresh: () => void
 }
 
 export function useEarthquakes(
-  params: EarthquakeQueryParams,
+  getParams: () => EarthquakeQueryParams,
 ): UseEarthquakesResult {
-  const {
-    startTime,
-    endTime,
-    minMagnitude,
-    minLatitude,
-    maxLatitude,
-    minLongitude,
-    maxLongitude,
-  } = params
   const [data, setData] = useState<Earthquake[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null)
+  const [retryToken, setRetryToken] = useState(0)
+  const lastUpdatedRef = useRef<number | null>(null)
 
   useEffect(() => {
+    let active = true
+    let inFlight = false
+    let lastAttemptAt = 0
     const controller = new AbortController()
 
     async function loadEarthquakes() {
-      setLoading(true)
+      if (inFlight) return
+
+      inFlight = true
+      lastAttemptAt = Date.now()
+      if (lastUpdatedRef.current === null) {
+        setLoading(true)
+      } else {
+        setRefreshing(true)
+      }
       setError(null)
 
       try {
         const earthquakes = await fetchEarthquakes({
-          startTime,
-          endTime,
-          minMagnitude,
-          minLatitude,
-          maxLatitude,
-          minLongitude,
-          maxLongitude,
+          // Recalculamos las fechas en cada consulta, incluso al cruzar medianoche.
+          ...getParams(),
           signal: controller.signal,
         })
 
+        if (!active) return
         setData(earthquakes)
+        const updatedAt = Date.now()
+        lastUpdatedRef.current = updatedAt
+        setLastUpdated(updatedAt)
       } catch (requestError: unknown) {
+        if (!active) return
         if (requestError instanceof DOMException && requestError.name === 'AbortError') {
           return
         }
 
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : 'No se pudieron cargar los sismos',
-        )
+        if (requestError instanceof TypeError) {
+          setError('No se pudo conectar con USGS')
+        } else if (requestError instanceof Error) {
+          setError(requestError.message)
+        } else {
+          setError('No se pudieron cargar los sismos')
+        }
       } finally {
-        if (!controller.signal.aborted) {
+        inFlight = false
+        if (active) {
           setLoading(false)
+          setRefreshing(false)
         }
       }
     }
 
     void loadEarthquakes()
+    const interval = window.setInterval(() => {
+      if (document.visibilityState !== 'hidden') void loadEarthquakes()
+    }, 90_000)
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible' && Date.now() - lastAttemptAt >= 90_000) {
+        void loadEarthquakes()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
+      active = false
       controller.abort()
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [
-    endTime,
-    maxLatitude,
-    maxLongitude,
-    minLatitude,
-    minLongitude,
-    minMagnitude,
-    startTime,
-  ])
+  }, [getParams, retryToken])
 
-  return { data, loading, error }
+  return {
+    data,
+    loading,
+    refreshing,
+    error,
+    lastUpdated,
+    refresh: () => setRetryToken((token) => token + 1),
+  }
 }

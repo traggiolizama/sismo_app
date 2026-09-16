@@ -1,20 +1,45 @@
+import { useEffect, useState } from 'react'
+
 export type DayRange = 7 | 30 | 90
 
 interface FilterPanelProps {
   days: DayRange
   minMagnitude: number
+  lastUpdated: number | null
+  updating: boolean
   onDaysChange: (days: DayRange) => void
   onMinMagnitudeChange: (magnitude: number) => void
+  onRefresh: () => void
 }
 
 const dayOptions = [7, 30, 90] as const
 
+function formatElapsed(seconds: number): string {
+  if (seconds < 60) return `hace ${seconds} ${seconds === 1 ? 'segundo' : 'segundos'}`
+
+  const minutes = Math.floor(seconds / 60)
+  if (minutes < 60) return `hace ${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`
+
+  const hours = Math.floor(minutes / 60)
+  return `hace ${hours} ${hours === 1 ? 'hora' : 'horas'}`
+}
+
 export function FilterPanel({
   days,
   minMagnitude,
+  lastUpdated,
+  updating,
   onDaysChange,
   onMinMagnitudeChange,
+  onRefresh,
 }: FilterPanelProps) {
+  const [now, setNow] = useState(Date.now())
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 1_000)
+    return () => window.clearInterval(interval)
+  }, [])
+
   return (
     <section className="filter-panel" aria-label="Filtros de sismos">
       <div className="filter-group">
@@ -51,6 +76,25 @@ export function FilterPanel({
           <span>M 3.0</span>
           <span>M 7.0</span>
         </div>
+      </div>
+
+      <div className="filter-update">
+        <span className="filter-label">Datos de USGS</span>
+        <span className="last-updated">
+          {lastUpdated === null ? (
+            'Esperando primera actualización'
+          ) : (
+            <>
+              Última actualización:{' '}
+              <time dateTime={new Date(lastUpdated).toISOString()} title={new Date(lastUpdated).toLocaleString('es-CL')}>
+                {formatElapsed(Math.max(0, Math.floor((now - lastUpdated) / 1_000)))}
+              </time>
+            </>
+          )}
+        </span>
+        <button className="refresh-button" type="button" disabled={updating} onClick={onRefresh}>
+          {updating ? 'Actualizando…' : 'Actualizar ahora'}
+        </button>
       </div>
     </section>
   )

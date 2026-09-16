@@ -266,6 +266,55 @@ h1 {
   font-weight: 650;
 }
 
+.filter-update {
+  display: flex;
+  min-width: 225px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+}
+
+.last-updated {
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.refresh-button,
+.retry-button {
+  padding: 7px 11px;
+  border: 1px solid #bdd4d8;
+  border-radius: 9px;
+  color: var(--brand-dark);
+  background: #ecf5f6;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.refresh-button:hover:not(:disabled),
+.retry-button:hover {
+  border-color: var(--brand);
+  background: #dcecee;
+}
+
+.refresh-button:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.refresh-button:focus-visible,
+.retry-button:focus-visible,
+.period-option:focus-visible,
+.tab-button:focus-visible,
+.source-link:focus-visible {
+  outline: 3px solid #81b9c3;
+  outline-offset: 2px;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.9fr) minmax(350px, 0.85fr);
@@ -842,6 +891,32 @@ time {
   color: #805161;
 }
 
+.error-state .retry-button {
+  margin-top: 17px;
+}
+
+.refresh-error {
+  display: flex;
+  margin-bottom: 18px;
+  padding: 13px 17px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid #edcbd3;
+  border-radius: 13px;
+  background: #fff7f8;
+}
+
+.refresh-error p {
+  margin: 0;
+  color: #805161;
+  font-size: 0.8rem;
+}
+
+.refresh-error .retry-button {
+  flex: 0 0 auto;
+}
+
 footer {
   width: min(1480px, calc(100% - 48px));
   margin: auto auto 0;
@@ -864,6 +939,10 @@ footer {
 
   .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .filter-panel {
+    flex-wrap: wrap;
   }
 
   .map-card,
@@ -914,7 +993,7 @@ footer {
   }
 
   .filter-panel {
-    top: 8px;
+    position: static;
     padding: 14px 16px;
     align-items: stretch;
     flex-direction: column;
@@ -931,6 +1010,24 @@ footer {
 
   .magnitude-filter {
     width: 100%;
+  }
+
+  .filter-update {
+    width: 100%;
+    min-width: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .filter-update .filter-label {
+    width: 100%;
+  }
+
+  .refresh-error {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   h1 {

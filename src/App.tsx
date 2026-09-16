@@ -15,7 +15,7 @@ function formatApiDate(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
-function createInitialQuery(): EarthquakeQueryParams {
+function createEarthquakeQuery(): EarthquakeQueryParams {
   const startDate = new Date()
   const endDate = new Date()
 
@@ -34,7 +34,6 @@ function createInitialQuery(): EarthquakeQueryParams {
   }
 }
 
-const initialQuery = createInitialQuery()
 const StatsPanel = lazy(() =>
   import('./components/Stats/StatsPanel').then(({ StatsPanel }) => ({
     default: StatsPanel,
@@ -44,7 +43,9 @@ const StatsPanel = lazy(() =>
 function App() {
   const [days, setDays] = useState<DayRange>(30)
   const [minMagnitude, setMinMagnitude] = useState(3)
-  const { data, loading, error } = useEarthquakes(initialQuery)
+  const { data, loading, refreshing, error, lastUpdated, refresh } =
+    useEarthquakes(createEarthquakeQuery)
+  const initialError = error !== null && lastUpdated === null
   const filteredEarthquakes = useMemo(() => {
     const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
 
@@ -86,6 +87,10 @@ function App() {
     },
   ]
 
+  let statusText = `${filteredEarthquakes.length} eventos encontrados`
+  if (loading) statusText = 'Consultando USGS'
+  else if (error) statusText = initialError ? 'Datos no disponibles' : 'Mostrando datos anteriores'
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -123,66 +128,80 @@ function App() {
             </p>
           </div>
 
-          <div className={`data-status ${error ? 'data-status-error' : ''}`}>
+          <div className={`data-status ${error ? 'data-status-error' : ''}`} aria-live="polite">
             <span className="status-dot" aria-hidden="true" />
-            {loading
-              ? 'Consultando USGS'
-              : error
-                ? 'Datos no disponibles'
-                : `${filteredEarthquakes.length} eventos encontrados`}
+            {statusText}
           </div>
         </section>
 
         <FilterPanel
           days={days}
           minMagnitude={minMagnitude}
+          lastUpdated={lastUpdated}
+          updating={loading || refreshing}
           onDaysChange={setDays}
           onMinMagnitudeChange={setMinMagnitude}
+          onRefresh={refresh}
         />
 
-        {error ? (
+        {initialError ? (
           <section className="error-state" role="alert">
             <span className="error-icon" aria-hidden="true">!</span>
             <div>
               <h2>No pudimos cargar la actividad sísmica</h2>
-              <p>{error}. Comprueba tu conexión e intenta recargar la página.</p>
+              <p>{error}. Comprueba tu conexión e intenta de nuevo.</p>
+              <button className="retry-button" type="button" onClick={refresh}>
+                Reintentar
+              </button>
             </div>
           </section>
         ) : (
-          <div className="dashboard-grid">
-            <section className="map-card" aria-labelledby="map-title">
-              <div className="card-heading">
-                <div>
-                  <p className="card-kicker">Vista geográfica</p>
-                  <h2 id="map-title">Mapa de actividad</h2>
-                </div>
-                <span className="period-chip">Últimos {days} días</span>
+          <>
+            {error && (
+              <div className="refresh-error" role="alert">
+                <p>
+                  No se pudieron actualizar los datos: {error}. Se muestran los últimos datos recibidos.
+                </p>
+                <button className="retry-button" type="button" onClick={refresh}>
+                  Reintentar
+                </button>
               </div>
-
-              <div className="map-stage">
-                <EarthquakeMap earthquakes={filteredEarthquakes} />
-                {loading && (
-                  <div className="map-loading" role="status">
-                    <span className="loading-spinner" aria-hidden="true" />
-                    Cargando eventos…
+            )}
+            <div className="dashboard-grid">
+              <section className="map-card" aria-labelledby="map-title">
+                <div className="card-heading">
+                  <div>
+                    <p className="card-kicker">Vista geográfica</p>
+                    <h2 id="map-title">Mapa de actividad</h2>
                   </div>
-                )}
-              </div>
-            </section>
-
-            <aside className="side-panel" aria-label="Detalle de actividad sísmica">
-              <div className="side-panel-heading">
-                <div>
-                  <p className="card-kicker">Explorar datos</p>
-                  <h2>Actividad reciente</h2>
+                  <span className="period-chip">Últimos {days} días</span>
                 </div>
-                {!loading && (
-                  <span className="count-badge">{filteredEarthquakes.length}</span>
-                )}
-              </div>
-              <TabPanel tabs={tabs} />
-            </aside>
-          </div>
+
+                <div className="map-stage">
+                  <EarthquakeMap earthquakes={filteredEarthquakes} />
+                  {loading && (
+                    <div className="map-loading" role="status">
+                      <span className="loading-spinner" aria-hidden="true" />
+                      Cargando eventos…
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <aside className="side-panel" aria-label="Detalle de actividad sísmica">
+                <div className="side-panel-heading">
+                  <div>
+                    <p className="card-kicker">Explorar datos</p>
+                    <h2>Actividad reciente</h2>
+                  </div>
+                  {!loading && (
+                    <span className="count-badge">{filteredEarthquakes.length}</span>
+                  )}
+                </div>
+                <TabPanel tabs={tabs} />
+              </aside>
+            </div>
+          </>
         )}
       </main>
 
