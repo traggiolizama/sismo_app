@@ -1,4 +1,6 @@
+import { useMemo, useState } from 'react'
 import type { EarthquakeQueryParams } from './api/earthquakes'
+import { FilterPanel, type DayRange } from './components/Filters/FilterPanel'
 import { TabPanel, type TabDefinition } from './components/Layout/TabPanel'
 import { EarthquakeMap } from './components/Map/EarthquakeMap'
 import { EarthquakeTable } from './components/Table/EarthquakeTable'
@@ -17,7 +19,8 @@ function createInitialQuery(): EarthquakeQueryParams {
   const startDate = new Date()
   const endDate = new Date()
 
-  startDate.setDate(startDate.getDate() - 29)
+  // Consultamos la ventana más amplia una vez; los filtros se aplican en memoria.
+  startDate.setDate(startDate.getDate() - 90)
   endDate.setDate(endDate.getDate() + 1)
 
   return {
@@ -34,7 +37,17 @@ function createInitialQuery(): EarthquakeQueryParams {
 const initialQuery = createInitialQuery()
 
 function App() {
+  const [days, setDays] = useState<DayRange>(30)
+  const [minMagnitude, setMinMagnitude] = useState(3)
   const { data, loading, error } = useEarthquakes(initialQuery)
+  const filteredEarthquakes = useMemo(() => {
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
+
+    return data.filter(
+      (earthquake) =>
+        earthquake.time >= cutoff && earthquake.mag >= minMagnitude,
+    )
+  }, [data, days, minMagnitude])
 
   const tabs: TabDefinition[] = [
     {
@@ -47,7 +60,7 @@ function App() {
           ))}
         </div>
       ) : (
-        <EarthquakeTable earthquakes={data} />
+        <EarthquakeTable earthquakes={filteredEarthquakes} />
       ),
     },
     {
@@ -103,8 +116,8 @@ function App() {
             <p className="eyebrow">Actividad sísmica reciente</p>
             <h1 id="page-title">Chile en movimiento</h1>
             <p className="intro-copy">
-              Explora los eventos de magnitud 3.0 o superior registrados durante
-              los últimos 30 días.
+              Explora los eventos de magnitud {minMagnitude.toFixed(1)} o superior
+              registrados durante los últimos {days} días.
             </p>
           </div>
 
@@ -114,9 +127,16 @@ function App() {
               ? 'Consultando USGS'
               : error
                 ? 'Datos no disponibles'
-                : `${data.length} eventos encontrados`}
+                : `${filteredEarthquakes.length} eventos encontrados`}
           </div>
         </section>
+
+        <FilterPanel
+          days={days}
+          minMagnitude={minMagnitude}
+          onDaysChange={setDays}
+          onMinMagnitudeChange={setMinMagnitude}
+        />
 
         {error ? (
           <section className="error-state" role="alert">
@@ -134,11 +154,11 @@ function App() {
                   <p className="card-kicker">Vista geográfica</p>
                   <h2 id="map-title">Mapa de actividad</h2>
                 </div>
-                <span className="period-chip">Últimos 30 días</span>
+                <span className="period-chip">Últimos {days} días</span>
               </div>
 
               <div className="map-stage">
-                <EarthquakeMap earthquakes={data} />
+                <EarthquakeMap earthquakes={filteredEarthquakes} />
                 {loading && (
                   <div className="map-loading" role="status">
                     <span className="loading-spinner" aria-hidden="true" />
@@ -154,7 +174,9 @@ function App() {
                   <p className="card-kicker">Explorar datos</p>
                   <h2>Actividad reciente</h2>
                 </div>
-                {!loading && <span className="count-badge">{data.length}</span>}
+                {!loading && (
+                  <span className="count-badge">{filteredEarthquakes.length}</span>
+                )}
               </div>
               <TabPanel tabs={tabs} />
             </aside>

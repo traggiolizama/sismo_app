@@ -170,6 +170,102 @@ h1 {
   background: var(--high);
 }
 
+.filter-panel {
+  position: sticky;
+  z-index: 1100;
+  top: 12px;
+  display: flex;
+  min-height: 92px;
+  margin-bottom: 20px;
+  padding: 16px 22px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 32px;
+  border: 1px solid rgba(211, 223, 226, 0.95);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 12px 32px rgba(35, 55, 64, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-label {
+  color: #657780;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.period-options {
+  display: flex;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface-soft);
+}
+
+.period-option {
+  min-width: 74px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 8px;
+  color: #5b6d75;
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.period-option:hover {
+  color: var(--brand-dark);
+  background: #e7f0f1;
+}
+
+.period-option[aria-pressed='true'] {
+  color: #ffffff;
+  background: var(--brand-dark);
+  box-shadow: 0 2px 7px rgba(23, 77, 89, 0.2);
+}
+
+.magnitude-filter {
+  width: min(310px, 100%);
+}
+
+.magnitude-filter .filter-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.magnitude-filter .filter-label strong {
+  color: var(--brand-dark);
+  font-size: 0.95rem;
+  letter-spacing: 0;
+}
+
+.magnitude-filter input {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--brand-dark);
+  cursor: pointer;
+}
+
+.range-limits {
+  display: flex;
+  justify-content: space-between;
+  color: #87969d;
+  font-size: 0.64rem;
+  font-weight: 650;
+}
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.9fr) minmax(350px, 0.85fr);
@@ -751,6 +847,26 @@ footer {
     margin-bottom: 22px;
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .filter-panel {
+    top: 8px;
+    padding: 14px 16px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .period-options {
+    align-self: flex-start;
+  }
+
+  .period-option {
+    min-width: 72px;
+  }
+
+  .magnitude-filter {
+    width: 100%;
   }
 
   h1 {
