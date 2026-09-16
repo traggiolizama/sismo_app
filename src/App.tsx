@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import type { EarthquakeQueryParams } from './api/earthquakes'
 import { FilterPanel, type DayRange } from './components/Filters/FilterPanel'
 import { TabPanel, type TabDefinition } from './components/Layout/TabPanel'
@@ -35,6 +35,11 @@ function createInitialQuery(): EarthquakeQueryParams {
 }
 
 const initialQuery = createInitialQuery()
+const StatsPanel = lazy(() =>
+  import('./components/Stats/StatsPanel').then(({ StatsPanel }) => ({
+    default: StatsPanel,
+  })),
+)
 
 function App() {
   const [days, setDays] = useState<DayRange>(30)
@@ -48,6 +53,13 @@ function App() {
         earthquake.time >= cutoff && earthquake.mag >= minMagnitude,
     )
   }, [data, days, minMagnitude])
+  const statsFallback = (
+    <div className="list-skeleton" aria-label="Cargando estadísticas">
+      {Array.from({ length: 5 }, (_, index) => (
+        <span key={index} />
+      ))}
+    </div>
+  )
 
   const tabs: TabDefinition[] = [
     {
@@ -66,20 +78,10 @@ function App() {
     {
       id: 'stats',
       label: 'Estadísticas',
-      content: (
-        <div className="stats-placeholder">
-          <div className="placeholder-visual" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-            <span />
-          </div>
-          <h3>Una mirada a los datos</h3>
-          <p>
-            Los gráficos de actividad diaria y distribución de magnitudes se
-            incorporarán en la Fase 4.
-          </p>
-        </div>
+      content: loading ? statsFallback : (
+        <Suspense fallback={statsFallback}>
+          <StatsPanel earthquakes={filteredEarthquakes} days={days} />
+        </Suspense>
       ),
     },
   ]
