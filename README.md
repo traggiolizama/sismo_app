@@ -48,16 +48,6 @@ El build crea `dist/`, que es el sitio estático que se publica; `src/` contiene
 
 Esta página sirve para explorar datos públicos, **no** como sistema de alerta temprana ni fuente para decisiones de emergencia. Para información oficial de Chile, consulta los organismos competentes.
 
-## Publicar en Vercel
-
-Cuando quieras publicar, primero sube tus commits a GitHub (en este proyecto, la rama es `main` y el remoto se llama `origin`):
-
-```powershell
-git status
-git push -u origin main
-```
-
-Después inicia sesión en [Vercel](https://vercel.com/), elige **Add New → Project**, conecta GitHub si te lo pide e importa el repositorio `sismo_app`. Comprueba que la raíz sea el directorio principal, que el framework detectado sea **Vite**, que el comando de build sea `npm run build` y que la carpeta de salida sea `dist`. No agregues variables de entorno. Pulsa **Deploy**. Vercel mostrará una URL `*.vercel.app`; ábrela, revisa que mapa, lista, gráficos, filtros y actualización carguen datos reales, y pruébala también en el teléfono. Los siguientes pushes a `main` crearán nuevas versiones de producción automáticamente.
 
 ## Posibles mejoras
 
